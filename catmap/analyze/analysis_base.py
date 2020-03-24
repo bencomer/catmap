@@ -8,10 +8,10 @@ try:
 except:
     norm = None
 from matplotlib.ticker import MaxNLocator
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
+import os
+import math
 plt = catmap.plt
-pickle = catmap.pickle
+pickle= catmap.pickle
 np = catmap.np
 spline = catmap.spline
 mtransforms = catmap.mtransforms
@@ -353,10 +353,15 @@ class MapPlot:
                         for lab in cbar_labels]
                 plot.set_clim(min_val,max_val)
                 fig = ax.get_figure()
-                divider = make_axes_locatable(ax)
-                cax = divider.append_axes("right", size="5%", pad=0.05)
+                axpos = list(ax.get_position().bounds)
+                xsize = axpos[2]*0.04
+                ysize = axpos[3]
+                xp = axpos[0]+axpos[2]+0.04*axpos[2]
+                yp = axpos[1]
+                cbar_box = [xp,yp,xsize,ysize]
+                cbar_ax = fig.add_axes(cbar_box)
                 cbar = fig.colorbar(mappable=plot,ticks=cbar_nums,
-                        cax=cax,extend=plot_args['extend'])
+                        cax=cbar_ax,extend=plot_args['extend'])
                 cbar.ax.set_yticklabels(cbar_labels)
                 if getattr(self,'colorbar_label',None):
                     cbar_kwargs = getattr(self,'colorbar_label_kwargs',{'rotation':-90})
@@ -453,9 +458,7 @@ class MapPlot:
 
             kwargs['overlay_map'] = overlay_map
             self.__dict__.update(old_dict)
-            
             self.plot_single(mapp,i,ax=ax_list[plotnum],**kwargs)
-
             plotnum+=1
 
         return fig
@@ -528,9 +531,9 @@ class MapPlot:
         x,y = zip(*pts)
         xi = np.linspace(min(x),max(x),eff_res)
         yi = np.linspace(min(y),max(y),eff_res)
-        ri = griddata((x,y),r,(xi[None,:],yi[:,None]),method='cubic')
-        gi = griddata((x,y),g,(xi[None,:],yi[:,None]),method='cubic')
-        bi = griddata((x,y),b,(xi[None,:],yi[:,None]),method='cubic')
+        ri = griddata(x,y,r,xi,yi)
+        gi = griddata(x,y,g,xi,yi)
+        bi = griddata(x,y,b,xi,yi)
         rgb_array = np.zeros((eff_res,eff_res,3))
         for i in range(0,eff_res):
             for j in range(0,eff_res):
@@ -584,17 +587,18 @@ class MechanismPlot:
     :param labels: list of labels
     :type labels: list
     """
-    def __init__(self,energies,barriers=[],labels=[]):
+    def __init__(self,energies,barriers=[],labels=[], label=None):
         self.energies = energies
         self.barriers = barriers
         self.labels = labels
+        self.label = label
         self.energy_line_args = {'color':'k','lw':2}
         self.barrier_line_args = {'color':'k','lw':2}
         self.label_args = {'color':'k','size':16,'rotation':45}
         self.label_positions= None
         self.initial_energy = 0
         self.initial_stepnumber = 0
-        self.energy_mode ='relative' #absolute
+        self.energy_mode ='absolute' #absolute
         self.energy_line_widths = 0.5
 
     def draw(self, ax=None):
@@ -653,7 +657,11 @@ class MechanismPlot:
                 for i,width in enumerate(energy_line_widths)]
         self.energy_lines = energy_lines
         for i,line in enumerate(energy_lines):
-            ax.plot(*line,**energy_line_args[i])
+            if i == 0:
+                ax.plot(*line,label=self.label,**energy_line_args[i])
+            else:
+                ax.plot(*line,**energy_line_args[i])
+            
 
         #create barrier lines
         barrier_lines = []
