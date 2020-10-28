@@ -594,7 +594,7 @@ class MechanismPlot:
         self.label = label
         self.energy_line_args = {'color':'k','lw':2}
         self.barrier_line_args = {'color':'k','lw':2}
-        self.label_args = {'color':'k','size':16,'rotation':45}
+        self.label_args = {'color':'k','size':16,'rotation':90}
         self.label_positions= None
         self.initial_energy = 0
         self.initial_stepnumber = 0
@@ -739,6 +739,7 @@ class MechanismPlot:
                 if 'va' not in args:# and 'textcoords' not in args:
                     args['va'] = 'bottom'
                 ax.annotate(label,[xpos,ypos],**args)
+        return ax
 
 class ScalingPlot:
     """
@@ -884,7 +885,7 @@ class ScalingPlot:
                 if y and y != None:
                     ax.plot(x,y,'o',color=col,markersize=10,mec=None)
                     if self.show_surface_labels:
-                        ax.annotate(sf,[x,y],color=col,**self.label_args)
+                        ax.annotate(sf,[x-0.4,y+0.1],color=col,**self.label_args)
                     num_y_vals.append(y)
             if self.show_titles:
                 ax.set_title('$'+ads+'$',size=self.title_size)
